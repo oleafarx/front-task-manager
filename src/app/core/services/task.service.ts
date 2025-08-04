@@ -1,0 +1,67 @@
+import { Injectable } from '@angular/core';
+import { Task } from '../../models/task.model';
+import { environment } from '../../environments/environment';
+import { HttpClient } from '@angular/common/http';
+import { catchError, Observable, throwError } from 'rxjs';
+
+@Injectable({ providedIn: 'root' })
+export class TaskService {
+    private url = environment.apiUrl;
+    
+    constructor(
+        private http: HttpClient
+    ) {}
+
+    getUserTasks(email: string): Observable<Task[]> {
+        const apiUrl = `${this.url}/tasks/${email}`;
+        return this.http.get<Task[]>(apiUrl).pipe(
+            catchError(error => {
+                if (error.status === 404) {
+                    console.error('Tasks not found for user:', email);
+                    return throwError(() => new Error('Tasks not found'));
+                }
+                return throwError(() => new Error('An error occurred while fetching tasks'));
+            })
+        )
+    }
+
+    createTask(task: Task): Observable<Task> {
+        const apiUrl = `${this.url}/tasks`;
+        return this.http.post<Task>(apiUrl, task).pipe(
+            catchError(error => {
+                console.error('Error creating task:', error);
+                return throwError(() => new Error('An error occurred while creating the task'));
+            })
+        );
+    }
+
+    updateTask(id: string, task: Partial<Task>): Observable<Task> {
+        const apiUrl = `${this.url}/tasks/${id}`;
+        return this.http.put<Task>(apiUrl, task).pipe(
+            catchError(error => {
+                console.error('Error updating task:', error);
+                return throwError(() => new Error('An error occurred while updating the task'));
+            })
+        );
+    }
+
+    deleteTask(taskId: string): Observable<void> {
+        const apiUrl = `${this.url}/tasks/${taskId}`;
+        return this.http.delete<void>(apiUrl).pipe(
+            catchError(error => {
+                console.error('Error deleting task:', error);
+                return throwError(() => new Error('An error occurred while deleting the task'));
+            })
+        );
+    }
+
+    completeTask(taskId: string): Observable<Task> {
+        const apiUrl = `${this.url}/tasks/${taskId}/complete`;
+        return this.http.post<Task>(apiUrl, {}).pipe(
+            catchError(error => {
+                console.error('Error completing task:', error);
+                return throwError(() => new Error('An error occurred while completing the task'));
+            })
+        );
+    }
+}

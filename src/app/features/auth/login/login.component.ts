@@ -23,7 +23,7 @@ export class LoginComponent {
   
   constructor(private fb: FormBuilder,
               private userService: UserService,
-              private sessionState: SessionState,
+              //private sessionState: SessionState,
               private router: Router) {
 
     this.loginForm = this.fb.group({
@@ -35,11 +35,11 @@ export class LoginComponent {
   }
 
   ngOnInit(): void {
-    this.sessionSubscription = this.sessionState.session$.subscribe(session => {
-      if (session.isAuthenticated) {
-        this.handleSuccessfulLogin();
-      }
-    });
+    // this.sessionSubscription = this.sessionState.session$.subscribe(session => {
+    //   if (session.isAuthenticated) {
+    //     this.handleSuccessfulLogin();
+    //   }
+    // });
 
     // if (this.sessionState.isAuthenticated) {
     //    this.handleSuccessfulLogin();
@@ -68,7 +68,7 @@ export class LoginComponent {
   private getUserByEmail(email: string): void {
     this.userService.getUserByEmail(email).subscribe({
       next: (user) => {
-        this.sessionState.setSession(user);
+        //this.sessionState.setSession(user);
         this.handleSuccessfulLogin();
       },
       error: (error) => {
@@ -81,7 +81,7 @@ export class LoginComponent {
   }
 
   private handleSuccessfulLogin(): void {
-    this.sessionState.updateActivity();
+    //this.sessionState.updateActivity();
     this.router.navigate(['/tasks']);
   }
 
@@ -90,7 +90,7 @@ export class LoginComponent {
     console.log('Redirect to register with email:', email);
     this.userService.createUser(email).subscribe({
       next: (user: User) => {
-        this.sessionState.updateUser({ email } as User);
+        //this.sessionState.updateUser({ email } as User);
         this.handleSuccessfulLogin();
       },
       error: (error) => {

@@ -4,8 +4,8 @@ import { CommonModule } from '@angular/common';
 import { UserService } from '../../../core/services/user.service'
 import { Router } from '@angular/router';
 import { User } from '../../../models/user.model';
-import { SessionState } from '../../../core/states/sessionState';
 import { Subscription } from 'rxjs';
+import { SessionState } from '../../../core/states/sessionState';
 
 @Component({
   selector: 'app-login',
@@ -23,7 +23,7 @@ export class LoginComponent {
   
   constructor(private fb: FormBuilder,
               private userService: UserService,
-              //private sessionState: SessionState,
+              private sessionState: SessionState,
               private router: Router) {
 
     this.loginForm = this.fb.group({
@@ -67,8 +67,10 @@ export class LoginComponent {
 
   private getUserByEmail(email: string): void {
     this.userService.getUserByEmail(email).subscribe({
-      next: (user) => {
-        //this.sessionState.setSession(user);
+      next: (resp) => {
+        const userData = resp.data;
+        console.log("getUser res: ", userData);
+        this.sessionState.setSession(userData);
         this.handleSuccessfulLogin();
       },
       error: (error) => {
@@ -90,7 +92,8 @@ export class LoginComponent {
     console.log('Redirect to register with email:', email);
     this.userService.createUser(email).subscribe({
       next: (user: User) => {
-        //this.sessionState.updateUser({ email } as User);
+        console.log("postUser res: ", user);
+        this.sessionState.setSession(user);
         this.handleSuccessfulLogin();
       },
       error: (error) => {

@@ -12,9 +12,9 @@ export class TaskService {
         private http: HttpClient
     ) {}
 
-    getUserTasks(email: string): Observable<Task[]> {
+    getUserTasks(email: string): Observable<any> {
         const apiUrl = `${this.url}/tasks/${email}`;
-        return this.http.get<Task[]>(apiUrl).pipe(
+        return this.http.get<any>(apiUrl).pipe(
             catchError(error => {
                 if (error.status === 404) {
                     console.error('Tasks not found for user:', email);
@@ -25,9 +25,9 @@ export class TaskService {
         )
     }
 
-    createTask(task: Task): Observable<Task> {
+    createTask(task: Task): Observable<any> {
         const apiUrl = `${this.url}/tasks`;
-        return this.http.post<Task>(apiUrl, task).pipe(
+        return this.http.post<any>(apiUrl, task).pipe(
             catchError(error => {
                 console.error('Error creating task:', error);
                 return throwError(() => new Error('An error occurred while creating the task'));
@@ -35,9 +35,9 @@ export class TaskService {
         );
     }
 
-    updateTask(id: string, task: Partial<Task>): Observable<Task> {
+    updateTask(id: string, task: Partial<Task>): Observable<any> {
         const apiUrl = `${this.url}/tasks/${id}`;
-        return this.http.put<Task>(apiUrl, task).pipe(
+        return this.http.put<any>(apiUrl, task).pipe(
             catchError(error => {
                 console.error('Error updating task:', error);
                 return throwError(() => new Error('An error occurred while updating the task'));
@@ -55,9 +55,9 @@ export class TaskService {
         );
     }
 
-    completeTask(taskId: string): Observable<Task> {
+    completeTask(taskId: string): Observable<any> {
         const apiUrl = `${this.url}/tasks/${taskId}/complete`;
-        return this.http.post<Task>(apiUrl, {}).pipe(
+        return this.http.post<any>(apiUrl, {}).pipe(
             catchError(error => {
                 console.error('Error completing task:', error);
                 return throwError(() => new Error('An error occurred while completing the task'));

@@ -1,9 +1,11 @@
 import { Component } from '@angular/core';
 import { Task } from '../../../models/task.model';
 import { Subscription } from 'rxjs';
-import { SessionState } from '../../../core/states/sessionState';
 import { TaskService } from '../../../core/services/task.service';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { SessionData } from '../../../models/session.model';
+import { SessionState } from '../../../core/states/sessionState';
 
 @Component({
   selector: 'app-task-list',
@@ -14,26 +16,24 @@ import { CommonModule } from '@angular/common';
 })
 export class TaskListComponent {
   // Propiedades del componente
-  tasks: Task[] = [];
+  tasksList: Task[] = [];
   showCompleted: boolean = false;
   isLoading: boolean = false;
   isUpdating: boolean = false;
   errorMessage: string = '';
-  
-  // Subscripciones
-  private subscriptions = new Subscription();
 
-  constructor(
-    private sessionState: SessionState,
-    private taskService: TaskService // Tu servicio de tareas - ajusta según tu implementación
-  ) {}
+  private session: SessionData;
+  
+  constructor(private sessionState: SessionState,
+              private taskService: TaskService,
+              private router: Router) {
+
+    this.session = this.sessionState.currentSession;
+    console.log("SESION ", this.session);
+  }
 
   ngOnInit(): void {
     this.initializeComponent();
-  }
-
-  ngOnDestroy(): void {
-    this.subscriptions.unsubscribe();
   }
 
   // Inicialización del componente
@@ -45,46 +45,39 @@ export class TaskListComponent {
     //   return;
     // }
 
-    // Suscribirse a cambios en la sesión
-    const sessionSub = this.sessionState.session$.subscribe(session => {
-      if (!session.isAuthenticated) {
-        console.log('Sesión terminada, redirigiendo al login');
-        // this.router.navigate(['/login']);
-      }
-    });
-
-    this.subscriptions.add(sessionSub);
-
-    // Cargar tareas iniciales
+    // // Suscribirse a cambios en la sesión
+    // const sessionSub = this.sessionState.session$.subscribe(session => {
+    //   if (!session.isAuthenticated) {
+    //     console.log('Sesión terminada, redirigiendo al login');
+    //     // this.router.navigate(['/login']);
+    //   }
+    // });
     this.loadTasks();
   }
 
-  // Cargar tareas desde el servicio
   loadTasks(): void {
     this.isLoading = true;
     this.errorMessage = '';
 
-    const currentUser = this.sessionState.currentUser;
-    if (!currentUser) {
-      this.errorMessage = 'Usuario no encontrado';
-      this.isLoading = false;
-      return;
-    }
-
-    // Determinar qué tareas cargar basado en el estado actual
-    const loadCompletedTasks = this.showCompleted;
     
-    // Llamada al servicio - ajusta según tu implementación
+    //const currentUser = this.sessionState.currentUser;
+    // if (!currentUser) {
+    //   this.errorMessage = 'Usuario no encontrado';
+    //   this.isLoading = false;
+    //   return;
+    // }
+
+    const emailUser = this.session.user ? this.session.user.email : '';
+    console.log('USER: ', emailUser);
     const taskSub = this.taskService.getUserTasks(
-      currentUser.email
+      emailUser
     ).subscribe({
-      next: (tasks: Task[]) => {
-        // Filtrar tareas según el estado requerido
-        this.tasks = this.filterTasks(tasks);
+      next: (resp) => {
+        const tasks = resp.data;
+        console.log("TASKS: ", tasks);
+        this.tasksList = this.filterTasks(tasks);
+        console.log("TASK AFTER FILTER: ", this.tasksList)
         this.isLoading = false;
-        
-        // Registrar actividad del usuario
-        this.sessionState.updateActivity();
       },
       error: (error: any) => {
         console.error('Error al cargar tareas:', error);
@@ -92,19 +85,16 @@ export class TaskListComponent {
         this.isLoading = false;
       }
     });
-
-    this.subscriptions.add(taskSub);
   }
 
-  // Filtrar tareas según el estado actual de vista
   private filterTasks(tasks: Task[]): Task[] {
-    return tasks.filter(task => {
-      // Solo mostrar tareas activas
+    console.log("TASKS: ", tasks);
+    const taskFiltered = tasks.filter(task => {
+      console.log("TASK", task);
       if (!task.isActive) return false;
-      
-      // Filtrar por completadas o pendientes
       return this.showCompleted ? task.isCompleted : !task.isCompleted;
-    });
+    })
+    return taskFiltered;
   }
 
   // Alternar vista entre completadas y pendientes
@@ -113,132 +103,75 @@ export class TaskListComponent {
     this.loadTasks();
   }
 
-  // Marcar/desmarcar tarea como completada
   toggleTaskCompletion(task: Task): void {
-    // Prevenir múltiples actualizaciones simultáneas
     if (this.isUpdating) return;
     
-    // Solo permitir completar tareas pendientes
     if (task.isCompleted) return;
 
     this.isUpdating = true;
 
-    // Crear objeto actualizado
     const updatedTask: Partial<Task> = {
       ...task,
       isCompleted: true,
       updatedAt: new Date()
     };
 
-    // Llamada al servicio para actualizar la tarea
-    const updateSub = this.taskService.updateTask(task.id, updatedTask).subscribe({
+    const updateSub = this.taskService.completeTask(task.id).subscribe({
       next: (result: Task) => {
         console.log('Tarea actualizada exitosamente:', result);
         
         // Actualizar la tarea en el array local
-        const taskIndex = this.tasks.findIndex(t => t.id === task.id);
+        const taskIndex = this.tasksList.findIndex(t => t.id === task.id);
         if (taskIndex !== -1) {
-          this.tasks[taskIndex] = { ...this.tasks[taskIndex], ...updatedTask } as Task;
+          this.tasksList[taskIndex] = { ...this.tasksList[taskIndex], ...updatedTask } as Task;
         }
 
         // Si estamos viendo pendientes, remover la tarea completada de la vista
         if (!this.showCompleted) {
-          this.tasks = this.tasks.filter(t => t.id !== task.id);
+          this.tasksList = this.tasksList.filter(t => t.id !== task.id);
         }
 
         this.isUpdating = false;
-        
-        // Registrar actividad
-        this.sessionState.updateActivity();
       },
       error: (error: any) => {
         console.error('Error al actualizar tarea:', error);
         this.errorMessage = 'No se pudo completar la tarea. Inténtalo de nuevo.';
         this.isUpdating = false;
-        
-        // Revertir el checkbox visualmente si es necesario
-        // El checkbox se actualizará automáticamente al no cambiar task.isCompleted
       }
     });
-
-    this.subscriptions.add(updateSub);
   }
 
-  // Crear nueva tarea
   createNewTask(): void {
-    // No permitir crear tareas cuando se están viendo las completadas
     if (this.showCompleted) {
       return;
     }
 
     console.log('Navegando a crear nueva tarea');
     
-    // Registrar actividad del usuario
-    this.sessionState.updateActivity();
-    
-    // Por ahora, solo log para demostración
-    console.log('Usuario actual:', this.currentUserEmail);
+    console.log('Usuario actual:', this.session.user);
   }
 
   logout(): void {
-    // Limpiar sesión
     this.sessionState.clearSession();
     
-    // Limpiar datos locales
-    this.tasks = [];
+    this.tasksList = [];
     this.showCompleted = false;
     this.errorMessage = '';
     
     console.log('Sesión cerrada exitosamente');
     
     // Redirigir al login
-    // this.router.navigate(['/login']);
-  }
-
-  // TrackBy function para mejorar performance en *ngFor
-  trackByTaskId(index: number, task: Task): string {
-    return task.id || index.toString();
-  }
-
-  // Métodos adicionales de utilidad
-
-  // Obtener estadísticas de tareas
-  getTaskStats(): { total: number, completed: number, pending: number } {
-    // Esto podría venir del servicio o calcularse localmente
-    return {
-      total: this.tasks.length,
-      completed: this.tasks.filter(t => t.isCompleted).length,
-      pending: this.tasks.filter(t => !t.isCompleted).length
-    };
+    this.router.navigate(['/login']);
   }
 
   // Verificar si hay tareas
   get hasTasks(): boolean {
-    return this.tasks.length > 0;
-  }
-
-  // Obtener mensaje de estado vacío personalizado
-  get emptyStateMessage(): string {
-    if (this.showCompleted) {
-      return 'No tienes tareas completadas aún. Completa algunas tareas para verlas aquí.';
-    } else {
-      return '¡Excelente! Has completado todas tus tareas pendientes.';
-    }
+    return this.tasksList.length > 0;
   }
 
   // Manejar reintentos de carga
   retryLoadTasks(): void {
     this.errorMessage = '';
     this.loadTasks();
-  }
-
-  // Obtener información del usuario actual
-  get currentUserEmail(): string {
-    return this.sessionState.userEmail || 'Usuario';
-  }
-
-  // Verificar si la sesión está por expirar
-  get sessionTimeRemaining(): number {
-    return this.sessionState.getSessionTimeRemaining();
   }
 }

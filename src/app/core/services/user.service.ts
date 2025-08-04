@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
-import { catchError, Observable, throwError } from 'rxjs';
+import { catchError, filter, Observable, throwError } from 'rxjs';
 import { User } from '../../models/user.model';
 
 @Injectable({ providedIn: 'root' })
@@ -12,9 +12,9 @@ export class UserService {
         private http: HttpClient
     ) {}
 
-    getUserByEmail(email: string): Observable<User> {
+    getUserByEmail(email: string): Observable<any> {
         const apiUrl = `${this.url}/users/${email}`;
-        return this.http.get<User>(apiUrl).pipe(
+        return this.http.get<any>(apiUrl).pipe(
             catchError(error => {
                 if (error.status === 404) {
                     console.error('User not found:', email);
@@ -25,12 +25,14 @@ export class UserService {
         )
     }
 
-    createUser(email: string): Observable<User> {
+    createUser(email: string): Observable<any> {
         const user: Partial<User> = {
             email: email,
             createdAt: new Date()
         }
         const apiUrl = `${this.url}/users`;
-        return this.http.post<User>(apiUrl, user);
+        return this.http.post<any>(apiUrl, user).pipe(
+            filter(resp => resp.data)
+        );
     }
 }

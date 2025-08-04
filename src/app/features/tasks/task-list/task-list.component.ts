@@ -24,6 +24,10 @@ export class TaskListComponent {
   errorMessage: string = '';
   showCreateModal: boolean = false;
   isCreatingTask: boolean = false;
+  showEditModal: boolean = false;
+  isEditingTask: boolean = false;
+  editTaskForm: FormGroup;
+  currentEditingTask: Task | null = null;
   taskForm: FormGroup;
 
   private session: SessionData;
@@ -35,6 +39,18 @@ export class TaskListComponent {
 
     this.session = this.sessionState.currentSession;
     this.taskForm = this.fb.group({
+      title: ['', [
+        Validators.required,
+        Validators.minLength(3),
+        Validators.maxLength(100)
+      ]],
+      description: ['', [
+        Validators.maxLength(500)
+      ]]
+    });
+
+    // Formulario para editar tareas
+    this.editTaskForm = this.fb.group({
       title: ['', [
         Validators.required,
         Validators.minLength(3),
@@ -227,6 +243,104 @@ export class TaskListComponent {
     this.resetTaskForm();
   }
 
+   // Nuevos métodos para editar tareas
+  openEditTaskModal(task: Task): void {
+    if (task.isCompleted) return;
+    
+    this.currentEditingTask = task;
+    this.showEditModal = true;
+    
+    // Precargar los datos del formulario
+    this.editTaskForm.patchValue({
+      title: task.title,
+      description: task.description
+    });
+  }
+
+  closeEditModal(): void {
+    if (this.isEditingTask) {
+      return; // No permitir cerrar mientras se está editando
+    }
+
+    this.showEditModal = false;
+    this.currentEditingTask = null;
+    this.resetEditTaskForm();
+  }
+
+  onEditTask(): void {
+    if (this.editTaskForm.invalid || this.isEditingTask || !this.currentEditingTask) {
+      this.editTaskForm.markAllAsTouched();
+      return;
+    }
+
+    this.isEditingTask = true;
+
+    const updatedTaskData = {
+      title: this.editTaskForm.get('title')?.value.trim(),
+      description: this.editTaskForm.get('description')?.value?.trim() || ''
+    };
+
+    console.log('Editando tarea:', updatedTaskData);
+
+    // Aquí llamarás al servicio para editar la tarea
+    // Por ahora simulo la llamada al servicio
+    // this.taskService.editTask(this.currentEditingTask.id, updatedTaskData).subscribe({
+    //   next: () => {
+    //     this.isEditingTask = false;
+    //     this.closeEditModal();
+    //     this.loadTasks();
+    //   },
+    //   error: (error: any) => {
+    //     console.error('Error al editar tarea:', error);
+    //     this.isEditingTask = false;
+    //     alert('No se pudo editar la tarea. Inténtalo de nuevo.');
+    //   }
+    // });
+
+    // Simulación temporal - reemplazar con la llamada real al servicio
+    setTimeout(() => {
+      console.log('Tarea editada simulada');
+      this.isEditingTask = false;
+      this.closeEditModal();
+      // Actualizar la tarea localmente (temporal)
+      const taskIndex = this.tasksList.findIndex(t => t.id === this.currentEditingTask?.id);
+      if (taskIndex !== -1) {
+        this.tasksList[taskIndex] = {
+          ...this.tasksList[taskIndex],
+          ...updatedTaskData,
+          updatedAt: new Date()
+        };
+      }
+    }, 1000);
+  }
+
+  // Método para eliminar tarea
+  deleteTask(task: Task): void {
+    const confirmDelete = confirm(`¿Estás seguro de que quieres eliminar la tarea "${task.title}"?`);
+    
+    if (!confirmDelete) return;
+
+    console.log('Eliminando tarea:', task);
+
+    // Aquí llamarás al servicio para eliminar la tarea
+    // this.taskService.deleteTask(task.id).subscribe({
+    //   next: () => {
+    //     console.log('Tarea eliminada exitosamente');
+    //     this.loadTasks();
+    //   },
+    //   error: (error: any) => {
+    //     console.error('Error al eliminar tarea:', error);
+    //     alert('No se pudo eliminar la tarea. Inténtalo de nuevo.');
+    //   }
+    // });
+
+    // Simulación temporal - reemplazar con la llamada real al servicio
+    setTimeout(() => {
+      console.log('Tarea eliminada simulada');
+      this.tasksList = this.tasksList.filter(t => t.id !== task.id);
+    }, 500);
+  }
+
   get title() {
     return this.taskForm.get('title');
   }
@@ -235,9 +349,22 @@ export class TaskListComponent {
     return this.taskForm.get('description');
   }
 
+  get editTitle() {
+    return this.editTaskForm.get('title');
+  }
+
+  get editDescription() {
+    return this.editTaskForm.get('description');
+  }
+
   // Resetear formulario
   private resetTaskForm(): void {
     this.taskForm.reset();
     this.taskForm.markAsUntouched();
+  }
+
+  private resetEditTaskForm(): void {
+    this.editTaskForm.reset();
+    this.editTaskForm.markAsUntouched();
   }
 }

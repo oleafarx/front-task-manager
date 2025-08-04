@@ -82,7 +82,7 @@
       </div>
     </div>
 
-    <div class="empty-state" *ngIf="!isLoading && tasksList.length === 0">
+    <div class="empty-state" *ngIf="!isLoading && tasksList.length === 0 && !isError">
       <div class="empty-icon">📝</div>
       <h2 class="empty-title">
         {{
@@ -100,122 +100,12 @@
       </p>
     </div>
   </main>
-</div>
 
-<div class="task-list-container">
-  <!-- Header con controles -->
-  <header class="task-header">
-    <div class="header-content">
-      <h1 class="page-title">
-        {{ showCompleted ? "Tareas Completadas" : "Tareas Pendientes" }}
-      </h1>
-      <div class="header-actions">
-        <button
-          class="create-task-btn"
-          (click)="createNewTask()"
-          [disabled]="showCompleted"
-        >
-          + Nueva Tarea
-        </button>
-        <button
-          class="toggle-view-btn"
-          (click)="toggleView()"
-          [class.completed-view]="showCompleted"
-        >
-          {{ showCompleted ? "VER PENDIENTES" : "VER COMPLETADAS" }}
-        </button>
-        <button class="logout-btn" (click)="logout()">Cerrar Sesión</button>
-      </div>
-    </div>
-  </header>
-
-  <!-- Contenido principal -->
-  <main class="task-content">
-    <!-- Estado de carga -->
-    <div class="loading-state" *ngIf="isLoading">
-      <div class="spinner"></div>
-      <p>Cargando tareas...</p>
-    </div>
-
-    <!-- Lista de tareas -->
-    <div class="task-list" *ngIf="!isLoading && tasksList.length > 0">
-      <div
-        class="task-card"
-        *ngFor="let task of tasksList;"
-        [class.completed]="task.isCompleted"
-      >
-        <!-- Checkbox para marcar como completada -->
-        <div class="task-checkbox">
-          <input
-            type="checkbox"
-            [id]="'task-' + task.id"
-            [checked]="task.isCompleted"
-            [disabled]="task.isCompleted || isUpdating"
-            (change)="toggleTaskCompletion(task)"
-            class="checkbox-input"
-          />
-          <label [for]="'task-' + task.id" class="checkbox-label"></label>
-        </div>
-
-        <!-- Contenido de la tarea -->
-        <div class="task-content-wrapper">
-          <h3 class="task-title" [class.completed-text]="task.isCompleted">
-            {{ task.title }}
-          </h3>
-          <p class="task-description" [class.completed-text]="task.isCompleted">
-            {{ task.description }}
-          </p>
-          <div class="task-meta">
-            <span class="created-date">
-              Creada: {{ task.createdAt | date : "short" }}
-            </span>
-            <span
-              class="updated-date"
-              *ngIf="task.updatedAt !== task.createdAt"
-            >
-              Actualizada: {{ task.updatedAt | date : "short" }}
-            </span>
-          </div>
-        </div>
-
-        <!-- Estado de la tarea -->
-        <div class="task-status">
-          <span
-            class="status-badge"
-            [class.completed-badge]="task.isCompleted"
-            [class.pending-badge]="!task.isCompleted"
-          >
-            {{ task.isCompleted ? "Completada" : "Pendiente" }}
-          </span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Estado vacío -->
-    <div class="empty-state" *ngIf="!isLoading && tasksList.length === 0">
-      <div class="empty-icon">📝</div>
-      <h2 class="empty-title">
-        {{
-          showCompleted
-            ? "No tienes tareas completadas"
-            : "No tienes tareas pendientes"
-        }}
-      </h2>
-      <p class="empty-message">
-        {{
-          showCompleted
-            ? "Completa algunas tareas para verlas aquí."
-            : "¡Perfecto! Has completado todas tus tareas."
-        }}
-      </p>
-    </div>
-
-    <!-- Estado de error -->
-    <div class="error-state" *ngIf="errorMessage">
+  <!-- Estado de error -->
+    <div class="error-state" *ngIf="isError">
       <div class="error-icon">⚠️</div>
       <h2 class="error-title">Error al cargar tareas</h2>
       <p class="error-message">{{ errorMessage }}</p>
       <button class="retry-btn" (click)="loadTasks()">Reintentar</button>
     </div>
-  </main>
 </div>

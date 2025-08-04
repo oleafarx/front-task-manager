@@ -20,6 +20,7 @@ export class TaskListComponent {
   showCompleted: boolean = false;
   isLoading: boolean = false;
   isUpdating: boolean = false;
+  isError: boolean = false;
   errorMessage: string = '';
 
   private session: SessionData;
@@ -59,14 +60,6 @@ export class TaskListComponent {
     this.isLoading = true;
     this.errorMessage = '';
 
-    
-    //const currentUser = this.sessionState.currentUser;
-    // if (!currentUser) {
-    //   this.errorMessage = 'Usuario no encontrado';
-    //   this.isLoading = false;
-    //   return;
-    // }
-
     const emailUser = this.session.user ? this.session.user.email : '';
     console.log('USER: ', emailUser);
     const taskSub = this.taskService.getUserTasks(
@@ -81,6 +74,7 @@ export class TaskListComponent {
       },
       error: (error: any) => {
         console.error('Error al cargar tareas:', error);
+        this.isError = true;
         this.errorMessage = 'No se pudieron cargar las tareas. Inténtalo de nuevo.';
         this.isLoading = false;
       }
@@ -135,6 +129,7 @@ export class TaskListComponent {
       },
       error: (error: any) => {
         console.error('Error al actualizar tarea:', error);
+        this.isError = true;
         this.errorMessage = 'No se pudo completar la tarea. Inténtalo de nuevo.';
         this.isUpdating = false;
       }
@@ -157,6 +152,7 @@ export class TaskListComponent {
     this.tasksList = [];
     this.showCompleted = false;
     this.errorMessage = '';
+    this.isError = false;
     
     console.log('Sesión cerrada exitosamente');
     
@@ -171,6 +167,7 @@ export class TaskListComponent {
 
   // Manejar reintentos de carga
   retryLoadTasks(): void {
+    this.isError = false;
     this.errorMessage = '';
     this.loadTasks();
   }

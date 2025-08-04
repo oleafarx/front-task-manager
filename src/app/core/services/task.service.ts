@@ -25,7 +25,7 @@ export class TaskService {
         )
     }
 
-    createTask(task: Task): Observable<any> {
+    createTask(task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Observable<any> {
         const apiUrl = `${this.url}/tasks`;
         return this.http.post<any>(apiUrl, task).pipe(
             catchError(error => {

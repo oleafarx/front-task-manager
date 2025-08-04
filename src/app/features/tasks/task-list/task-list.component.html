@@ -7,7 +7,7 @@
       <div class="header-actions">
         <button
           class="create-task-btn"
-          (click)="createNewTask()"
+          (click)="openCreateTaskModal()"
           [disabled]="showCompleted"
         >
           + Nueva Tarea
@@ -33,7 +33,7 @@
     <div class="task-list" *ngIf="!isLoading && tasksList.length > 0">
       <div
         class="task-card"
-        *ngFor="let task of tasksList;"
+        *ngFor="let task of tasksList"
         [class.completed]="task.isCompleted"
       >
         <!-- Checkbox para marcar como completada -->
@@ -82,7 +82,10 @@
       </div>
     </div>
 
-    <div class="empty-state" *ngIf="!isLoading && tasksList.length === 0 && !isError">
+    <div
+      class="empty-state"
+      *ngIf="!isLoading && tasksList.length === 0 && !isError"
+    >
       <div class="empty-icon">📝</div>
       <h2 class="empty-title">
         {{
@@ -102,10 +105,91 @@
   </main>
 
   <!-- Estado de error -->
-    <div class="error-state" *ngIf="isError">
-      <div class="error-icon">⚠️</div>
-      <h2 class="error-title">Error al cargar tareas</h2>
-      <p class="error-message">{{ errorMessage }}</p>
-      <button class="retry-btn" (click)="loadTasks()">Reintentar</button>
+  <div class="error-state" *ngIf="isError">
+    <div class="error-icon">⚠️</div>
+    <h2 class="error-title">Error al cargar tareas</h2>
+    <p class="error-message">{{ errorMessage }}</p>
+    <button class="retry-btn" (click)="loadTasks()">Reintentar</button>
+  </div>
+</div>
+
+<!-- Modal para crear nueva tarea -->
+<div class="modal-overlay" *ngIf="showCreateModal" (click)="closeCreateModal()">
+  <div class="modal-content create-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Crear Nueva Tarea</h3>
+      <button class="close-button" (click)="closeCreateModal()">&times;</button>
     </div>
+
+    <form [formGroup]="taskForm" (ngSubmit)="onCreateTask()" class="task-form">
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="taskTitle" class="form-label">Título *</label>
+          <input
+            id="taskTitle"
+            type="text"
+            formControlName="title"
+            class="form-input"
+            [class.error]="title?.invalid && title?.touched"
+            placeholder="Ingresa el título de la tarea"
+            maxlength="100"
+          />
+          <div class="error-message" *ngIf="title?.invalid && title?.touched">
+            <span *ngIf="title?.errors?.['required']"
+              >El título es requerido</span
+            >
+            <span *ngIf="title?.errors?.['minlength']"
+              >El título debe tener al menos 3 caracteres</span
+            >
+            <span *ngIf="title?.errors?.['maxlength']"
+              >El título no puede exceder 100 caracteres</span
+            >
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="taskDescription" class="form-label">Descripción</label>
+          <textarea
+            id="taskDescription"
+            formControlName="description"
+            class="form-textarea"
+            [class.error]="description?.invalid && description?.touched"
+            placeholder="Describe los detalles de la tarea (opcional)"
+            rows="4"
+            maxlength="500"
+          ></textarea>
+          <div class="char-counter">
+            {{ taskForm.get("description")?.value?.length || 0 }}/500
+          </div>
+          <div
+            class="error-message"
+            *ngIf="description?.invalid && description?.touched"
+          >
+            <span *ngIf="description?.errors?.['maxlength']"
+              >La descripción no puede exceder 500 caracteres</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="closeCreateModal()"
+          [disabled]="isCreatingTask"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="btn-primary"
+          [disabled]="taskForm.invalid || isCreatingTask"
+        >
+          <span *ngIf="isCreatingTask" class="loading-spinner"></span>
+          {{ isCreatingTask ? "Creando..." : "Crear Tarea" }}
+        </button>
+      </div>
+    </form>
+  </div>
 </div>

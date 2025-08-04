@@ -1,16 +1,16 @@
 import { Component } from '@angular/core';
 import { Task } from '../../../models/task.model';
-import { Subscription } from 'rxjs';
 import { TaskService } from '../../../core/services/task.service';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { SessionData } from '../../../models/session.model';
 import { SessionState } from '../../../core/states/sessionState';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-task-list',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './task-list.component.html',
   styleUrl: './task-list.component.scss'
 })
@@ -22,14 +22,28 @@ export class TaskListComponent {
   isUpdating: boolean = false;
   isError: boolean = false;
   errorMessage: string = '';
+  showCreateModal: boolean = false;
+  isCreatingTask: boolean = false;
+  taskForm: FormGroup;
 
   private session: SessionData;
-  
+
   constructor(private sessionState: SessionState,
               private taskService: TaskService,
+              private fb: FormBuilder,
               private router: Router) {
 
     this.session = this.sessionState.currentSession;
+    this.taskForm = this.fb.group({
+      title: ['', [
+        Validators.required,
+        Validators.minLength(3),
+        Validators.maxLength(100)
+      ]],
+      description: ['', [
+        Validators.maxLength(500)
+      ]]
+    });
     console.log("SESION ", this.session);
   }
 
@@ -62,7 +76,7 @@ export class TaskListComponent {
 
     const emailUser = this.session.user ? this.session.user.email : '';
     console.log('USER: ', emailUser);
-    const taskSub = this.taskService.getUserTasks(
+    this.taskService.getUserTasks(
       emailUser
     ).subscribe({
       next: (resp) => {
@@ -99,7 +113,7 @@ export class TaskListComponent {
 
   toggleTaskCompletion(task: Task): void {
     if (this.isUpdating) return;
-    
+
     if (task.isCompleted) return;
 
     this.isUpdating = true;
@@ -110,10 +124,10 @@ export class TaskListComponent {
       updatedAt: new Date()
     };
 
-    const updateSub = this.taskService.completeTask(task.id).subscribe({
+    this.taskService.completeTask(task.id).subscribe({
       next: (result: Task) => {
         console.log('Tarea actualizada exitosamente:', result);
-        
+
         // Actualizar la tarea en el array local
         const taskIndex = this.tasksList.findIndex(t => t.id === task.id);
         if (taskIndex !== -1) {
@@ -136,26 +150,52 @@ export class TaskListComponent {
     });
   }
 
-  createNewTask(): void {
-    if (this.showCompleted) {
+  // Crear tarea
+  onCreateTask(): void {
+    if (this.taskForm.invalid || this.isCreatingTask) {
+      this.taskForm.markAllAsTouched();
       return;
     }
 
-    console.log('Navegando a crear nueva tarea');
-    
-    console.log('Usuario actual:', this.session.user);
+    this.isCreatingTask = true;
+
+    // Crear objeto de nueva tarea
+    const userId = this.session.user ? this.session.user.email : 'default';
+    const newTask: Omit<Task, 'id' | 'createdAt' | 'updatedAt'> = {
+      userId: userId,
+      title: this.taskForm.get('title')?.value.trim(),
+      description: this.taskForm.get('description')?.value?.trim() || '',
+      isCompleted: false,
+      isActive: true
+    };
+
+    console.log('Creando nueva tarea:', newTask);
+
+    // Llamada al servicio para crear la tarea
+    const createSub = this.taskService.createTask(newTask).subscribe({
+      next: () => {
+        this.isCreatingTask = false;
+        this.closeCreateModal();
+        this.loadTasks();
+      },
+      error: (error: any) => {
+        console.error('Error al crear tarea:', error);
+        this.isCreatingTask = false;
+        alert('No se pudo crear la tarea. Inténtalo de nuevo.');
+      }
+    });
   }
 
   logout(): void {
     this.sessionState.clearSession();
-    
+
     this.tasksList = [];
     this.showCompleted = false;
     this.errorMessage = '';
     this.isError = false;
-    
+
     console.log('Sesión cerrada exitosamente');
-    
+
     // Redirigir al login
     this.router.navigate(['/login']);
   }
@@ -170,5 +210,34 @@ export class TaskListComponent {
     this.isError = false;
     this.errorMessage = '';
     this.loadTasks();
+  }
+
+  openCreateTaskModal(): void {
+    this.showCreateModal = true;
+    this.resetTaskForm();
+  }
+
+  // Cerrar modal de creación
+  closeCreateModal(): void {
+    if (this.isCreatingTask) {
+      return; // No permitir cerrar mientras se está creando
+    }
+
+    this.showCreateModal = false;
+    this.resetTaskForm();
+  }
+
+  get title() {
+    return this.taskForm.get('title');
+  }
+
+  get description() {
+    return this.taskForm.get('description');
+  }
+
+  // Resetear formulario
+  private resetTaskForm(): void {
+    this.taskForm.reset();
+    this.taskForm.markAsUntouched();
   }
 }

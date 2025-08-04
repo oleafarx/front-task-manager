@@ -188,7 +188,7 @@ export class TaskListComponent {
     console.log('Creando nueva tarea:', newTask);
 
     // Llamada al servicio para crear la tarea
-    const createSub = this.taskService.createTask(newTask).subscribe({
+    this.taskService.createTask(newTask).subscribe({
       next: () => {
         this.isCreatingTask = false;
         this.closeCreateModal();
@@ -280,65 +280,35 @@ export class TaskListComponent {
       description: this.editTaskForm.get('description')?.value?.trim() || ''
     };
 
-    console.log('Editando tarea:', updatedTaskData);
-
-    // Aquí llamarás al servicio para editar la tarea
-    // Por ahora simulo la llamada al servicio
-    // this.taskService.editTask(this.currentEditingTask.id, updatedTaskData).subscribe({
-    //   next: () => {
-    //     this.isEditingTask = false;
-    //     this.closeEditModal();
-    //     this.loadTasks();
-    //   },
-    //   error: (error: any) => {
-    //     console.error('Error al editar tarea:', error);
-    //     this.isEditingTask = false;
-    //     alert('No se pudo editar la tarea. Inténtalo de nuevo.');
-    //   }
-    // });
-
-    // Simulación temporal - reemplazar con la llamada real al servicio
-    setTimeout(() => {
-      console.log('Tarea editada simulada');
-      this.isEditingTask = false;
-      this.closeEditModal();
-      // Actualizar la tarea localmente (temporal)
-      const taskIndex = this.tasksList.findIndex(t => t.id === this.currentEditingTask?.id);
-      if (taskIndex !== -1) {
-        this.tasksList[taskIndex] = {
-          ...this.tasksList[taskIndex],
-          ...updatedTaskData,
-          updatedAt: new Date()
-        };
+    const taskId = this.currentEditingTask.id;
+    this.taskService.updateTask(taskId, updatedTaskData).subscribe({
+      next: () => {
+        this.isEditingTask = false;
+        this.closeEditModal();
+        this.loadTasks();
+      },
+      error: (error: any) => {
+        console.error('Error al editar tarea', error);
+        this.isEditingTask = false;
+        alert('No se pudo editar la tarea. Inténtalo de nuevo.');
       }
-    }, 1000);
+    })
   }
 
-  // Método para eliminar tarea
   deleteTask(task: Task): void {
     const confirmDelete = confirm(`¿Estás seguro de que quieres eliminar la tarea "${task.title}"?`);
     
     if (!confirmDelete) return;
 
-    console.log('Eliminando tarea:', task);
-
-    // Aquí llamarás al servicio para eliminar la tarea
-    // this.taskService.deleteTask(task.id).subscribe({
-    //   next: () => {
-    //     console.log('Tarea eliminada exitosamente');
-    //     this.loadTasks();
-    //   },
-    //   error: (error: any) => {
-    //     console.error('Error al eliminar tarea:', error);
-    //     alert('No se pudo eliminar la tarea. Inténtalo de nuevo.');
-    //   }
-    // });
-
-    // Simulación temporal - reemplazar con la llamada real al servicio
-    setTimeout(() => {
-      console.log('Tarea eliminada simulada');
-      this.tasksList = this.tasksList.filter(t => t.id !== task.id);
-    }, 500);
+    this.taskService.deleteTask(task.id).subscribe({
+      next: () => {
+        this.loadTasks();
+      },
+      error: (error: any) => {
+        console.error("Error eliminando la tarea: ", error);
+        alert('No se pudo eliminar la tarea. Inténtelo de nuevo');
+      }
+    })
   }
 
   get title() {

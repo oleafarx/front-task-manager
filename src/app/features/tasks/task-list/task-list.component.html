@@ -59,13 +59,13 @@
           </p>
           <div class="task-meta">
             <span class="created-date">
-              Creada: {{ task.createdAt | date : "short" }}
+              Creada: {{ task.createdAt | date : "fullDate" }}
             </span>
             <span
               class="updated-date"
               *ngIf="task.updatedAt !== task.createdAt"
             >
-              Actualizada: {{ task.updatedAt | date : "short" }}
+              Actualizada: {{ task.updatedAt | date : "fullDate" }}
             </span>
           </div>
         </div>

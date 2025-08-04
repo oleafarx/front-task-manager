@@ -1,7 +1,11 @@
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, AbstractControl, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '../../../core/services/auth.service'
+import { UserService } from '../../../core/services/user.service'
+import { Router } from '@angular/router';
+import { User } from '../../../models/user.model';
+import { SessionState } from '../../../core/states/sessionState';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -15,9 +19,12 @@ export class LoginComponent {
   private session: any = {};
   public showModal: boolean = false;
   private emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
+  private sessionSubscription: Subscription = new Subscription();
+  
   constructor(private fb: FormBuilder,
-              private authService: AuthService) {
+              private userService: UserService,
+              private sessionState: SessionState,
+              private router: Router) {
 
     this.loginForm = this.fb.group({
       email: ['', [
@@ -25,6 +32,24 @@ export class LoginComponent {
         Validators.pattern(this.emailPattern)
       ]]
     });
+  }
+
+  ngOnInit(): void {
+    this.sessionSubscription = this.sessionState.session$.subscribe(session => {
+      if (session.isAuthenticated) {
+        this.handleSuccessfulLogin();
+      }
+    });
+
+    // if (this.sessionState.isAuthenticated) {
+    //    this.handleSuccessfulLogin();
+    // }
+  }
+
+  ngOnDestroy(): void {
+    if (this.sessionSubscription) {
+      this.sessionSubscription.unsubscribe();
+    }
   }
 
   get email(): AbstractControl | null {
@@ -41,10 +66,9 @@ export class LoginComponent {
   }
 
   private getUserByEmail(email: string): void {
-    this.authService.getUserByEmail(email).subscribe({
+    this.userService.getUserByEmail(email).subscribe({
       next: (user) => {
-        this.session.email = email;
-        this.session.user = user;
+        this.sessionState.setSession(user);
         this.handleSuccessfulLogin();
       },
       error: (error) => {
@@ -57,23 +81,26 @@ export class LoginComponent {
   }
 
   private handleSuccessfulLogin(): void {
-    // Lógica para cuando el login es exitoso
-    console.log('Login successful, session:', this.session);
-    // Ejemplo: redirigir al dashboard
-    // this.router.navigate(['/dashboard']);
+    this.sessionState.updateActivity();
+    this.router.navigate(['/tasks']);
   }
 
   onRegisterConfirm(): void {
-    // Usuario confirma que quiere registrarse
     const email = this.loginForm.value.email;
     console.log('Redirect to register with email:', email);
-    // Aquí puedes redirigir a la página de registro pasando el email
-    // this.router.navigate(['/register'], { queryParams: { email: email } });
+    this.userService.createUser(email).subscribe({
+      next: (user: User) => {
+        this.sessionState.updateUser({ email } as User);
+        this.handleSuccessfulLogin();
+      },
+      error: (error) => {
+        console.error('Error creating user:', error);
+      }
+    })
     this.closeModal();
   }
 
   onRegisterCancel(): void {
-    // Usuario cancela el registro
     this.closeModal();
   }
 

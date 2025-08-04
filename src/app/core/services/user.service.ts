@@ -5,7 +5,7 @@ import { catchError, Observable, throwError } from 'rxjs';
 import { User } from '../../models/user.model';
 
 @Injectable({ providedIn: 'root' })
-export class AuthService {
+export class UserService {
     private url = environment.apiUrl;
 
     constructor(
@@ -25,7 +25,11 @@ export class AuthService {
         )
     }
 
-    createUser(user: User): Observable<User> {
+    createUser(email: string): Observable<User> {
+        const user: Partial<User> = {
+            email: email,
+            createdAt: new Date()
+        }
         const apiUrl = `${this.url}/users`;
         return this.http.post<User>(apiUrl, user);
     }

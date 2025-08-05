@@ -1,0 +1,304 @@
+<div class="task-list-container">
+  <header class="task-header">
+    <div class="header-content">
+      <h1 class="page-title">
+        {{ showCompleted ? "Tareas Completadas" : "Tareas Pendientes" }}
+      </h1>
+      <div class="header-actions">
+        <button
+          class="create-task-btn"
+          (click)="openCreateTaskModal()"
+          [disabled]="showCompleted"
+        >
+          + Nueva Tarea
+        </button>
+        <button
+          class="toggle-view-btn"
+          (click)="toggleView()"
+          [class.completed-view]="showCompleted"
+        >
+          {{ showCompleted ? "VER PENDIENTES" : "VER COMPLETADAS" }}
+        </button>
+        <button class="logout-btn" (click)="logout()">Cerrar Sesión</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="task-content">
+    <div class="loading-state" *ngIf="isLoading">
+      <div class="spinner"></div>
+      <p>Cargando tareas...</p>
+    </div>
+
+    <div class="task-list" *ngIf="!isLoading && tasksList.length > 0">
+      <div
+        class="task-card"
+        *ngFor="let task of tasksList"
+        [class.completed]="task.isCompleted"
+      >
+        <!-- Checkbox para marcar como completada -->
+        <div class="task-checkbox">
+          <input
+            type="checkbox"
+            [id]="'task-' + task.id"
+            [checked]="task.isCompleted"
+            [disabled]="task.isCompleted || isUpdating"
+            (change)="toggleTaskCompletion(task)"
+            class="checkbox-input"
+          />
+          <label [for]="'task-' + task.id" class="checkbox-label"></label>
+        </div>
+
+        <!-- Contenido de la tarea -->
+        <div class="task-content-wrapper">
+          <h3 class="task-title" [class.completed-text]="task.isCompleted">
+            {{ task.title }}
+          </h3>
+          <p class="task-description" [class.completed-text]="task.isCompleted">
+            {{ task.description }}
+          </p>
+          <div class="task-meta">
+            <span class="created-date">
+              Creada: {{ task.createdAt | date : "fullDate" }}
+            </span>
+            <span
+              class="updated-date"
+              *ngIf="task.updatedAt !== task.createdAt"
+            >
+              Actualizada: {{ task.updatedAt | date : "fullDate" }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Nuevo div que encapsula status y acciones -->
+        <div class="task-actions-wrapper">
+          <div class="task-status">
+            <span
+              class="status-badge"
+              [class.completed-badge]="task.isCompleted"
+              [class.pending-badge]="!task.isCompleted"
+            >
+              {{ task.isCompleted ? "Completada" : "Pendiente" }}
+            </span>
+          </div>
+
+          <div class="task-actions">
+            <button
+              class="action-btn edit-btn"
+              [disabled]="task.isCompleted"
+              (click)="openEditTaskModal(task)"
+              title="Editar tarea"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="m18.5 2.5 a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+            </button>
+            <button
+              class="action-btn delete-btn"
+              (click)="deleteTask(task)"
+              title="Eliminar tarea"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3,6 5,6 21,6"></polyline>
+                <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="empty-state"
+      *ngIf="!isLoading && tasksList.length === 0 && !isError"
+    >
+      <div class="empty-icon">📝</div>
+      <h2 class="empty-title">
+        {{
+          showCompleted
+            ? "No tienes tareas completadas"
+            : "No tienes tareas pendientes"
+        }}
+      </h2>
+      <p class="empty-message">
+        {{
+          showCompleted
+            ? "Completa algunas tareas para verlas aquí."
+            : "¡Perfecto! Has completado todas tus tareas."
+        }}
+      </p>
+    </div>
+  </main>
+
+  <!-- Estado de error -->
+  <div class="error-state" *ngIf="isError">
+    <div class="error-icon">⚠️</div>
+    <h2 class="error-title">Error al cargar tareas</h2>
+    <p class="error-message">{{ errorMessage }}</p>
+    <button class="retry-btn" (click)="loadTasks()">Reintentar</button>
+  </div>
+</div>
+
+<!-- Modal para crear nueva tarea -->
+<div class="modal-overlay" *ngIf="showCreateModal" (click)="closeCreateModal()">
+  <div class="modal-content create-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Crear Nueva Tarea</h3>
+      <button class="close-button" (click)="closeCreateModal()">&times;</button>
+    </div>
+
+    <form [formGroup]="taskForm" (ngSubmit)="onCreateTask()" class="task-form">
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="taskTitle" class="form-label">Título *</label>
+          <input
+            id="taskTitle"
+            type="text"
+            formControlName="title"
+            class="form-input"
+            [class.error]="title?.invalid && title?.touched"
+            placeholder="Ingresa el título de la tarea"
+            maxlength="100"
+          />
+          <div class="error-message-modal" *ngIf="title?.invalid && title?.touched">
+            <span *ngIf="title?.errors?.['required']"
+              >El título es requerido</span
+            >
+            <span *ngIf="title?.errors?.['minlength']"
+              >El título debe tener al menos 3 caracteres</span
+            >
+            <span *ngIf="title?.errors?.['maxlength']"
+              >El título no puede exceder 100 caracteres</span
+            >
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="taskDescription" class="form-label">Descripción</label>
+          <textarea
+            id="taskDescription"
+            formControlName="description"
+            class="form-textarea"
+            [class.error]="description?.invalid && description?.touched"
+            placeholder="Describe los detalles de la tarea (opcional)"
+            rows="4"
+            maxlength="500"
+          ></textarea>
+          <div class="char-counter">
+            {{ taskForm.get("description")?.value?.length || 0 }}/500
+          </div>
+          <div
+            class="error-message-modal"
+            *ngIf="description?.invalid && description?.touched"
+          >
+            <span *ngIf="description?.errors?.['maxlength']"
+              >La descripción no puede exceder 500 caracteres</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="closeCreateModal()"
+          [disabled]="isCreatingTask"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="btn-primary"
+          [disabled]="taskForm.invalid || isCreatingTask"
+        >
+          <span *ngIf="isCreatingTask" class="loading-spinner"></span>
+          {{ isCreatingTask ? "Creando..." : "Crear Tarea" }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showEditModal" (click)="closeEditModal()">
+  <div class="modal-content edit-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Editar Tarea</h3>
+      <button class="close-button" (click)="closeEditModal()">&times;</button>
+    </div>
+
+    <form [formGroup]="editTaskForm" (ngSubmit)="onEditTask()" class="task-form">
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="editTaskTitle" class="form-label">Título *</label>
+          <input
+            id="editTaskTitle"
+            type="text"
+            formControlName="title"
+            class="form-input"
+            [class.error]="editTitle?.invalid && editTitle?.touched"
+            placeholder="Ingresa el título de la tarea"
+            maxlength="100"
+          />
+          <div class="error-message-modal" *ngIf="editTitle?.invalid && editTitle?.touched">
+            <span *ngIf="editTitle?.errors?.['required']"
+              >El título es requerido</span
+            >
+            <span *ngIf="editTitle?.errors?.['minlength']"
+              >El título debe tener al menos 3 caracteres</span
+            >
+            <span *ngIf="editTitle?.errors?.['maxlength']"
+              >El título no puede exceder 100 caracteres</span
+            >
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="editTaskDescription" class="form-label">Descripción</label>
+          <textarea
+            id="editTaskDescription"
+            formControlName="description"
+            class="form-textarea"
+            [class.error]="editDescription?.invalid && editDescription?.touched"
+            placeholder="Describe los detalles de la tarea (opcional)"
+            rows="4"
+            maxlength="500"
+          ></textarea>
+          <div class="char-counter">
+            {{ editTaskForm.get("description")?.value?.length || 0 }}/500
+          </div>
+          <div
+            class="error-message-modal"
+            *ngIf="editDescription?.invalid && editDescription?.touched"
+          >
+            <span *ngIf="editDescription?.errors?.['maxlength']"
+              >La descripción no puede exceder 500 caracteres</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="closeEditModal()"
+          [disabled]="isEditingTask"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="btn-primary"
+          [disabled]="editTaskForm.invalid || isEditingTask"
+        >
+          <span *ngIf="isEditingTask" class="loading-spinner"></span>
+          {{ isEditingTask ? "Guardando..." : "Guardar Cambios" }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

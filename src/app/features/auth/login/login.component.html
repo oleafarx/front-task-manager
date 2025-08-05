@@ -1,0 +1,48 @@
+<div class="login-container">
+  <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+    <h2 class="login-title">Iniciar Sesión</h2>
+    
+    <div class="form-group">
+      <label for="email" class="form-label">Email</label>
+      <input
+        id="email"
+        type="email"
+        formControlName="email"
+        class="form-input"
+        [class.error]="email?.invalid && email?.touched"
+        placeholder="Ingresa tu email"
+      />
+      
+      <div class="error-message" *ngIf="email?.invalid && email?.touched">
+        <span *ngIf="email?.errors?.['required']">El email es requerido</span>
+        <span *ngIf="email?.errors?.['pattern']">Correo electrónico no es válido</span>
+      </div>
+    </div>
+    
+    <button 
+      type="submit" 
+      class="submit-button"
+      [disabled]="loginForm.invalid"
+    >
+      Ingresar
+    </button>
+  </form>
+
+  <!--MODAL PARA EL USUARIO NO ENCONTRADO-->
+  <div class="modal-overlay" *ngIf="showModal" (click)="onRegisterCancel()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Usuario no encontrado</h3>
+        <button class="close-button" (click)="onRegisterCancel()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>El correo <strong>{{ loginForm.value.email }}</strong> no está registrado en nuestro sistema.</p>
+        <p>¿Deseas registrarte con este correo?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="onRegisterCancel()">Cancelar</button>
+        <button class="btn-primary" (click)="onRegisterConfirm()">Registrarme</button>
+      </div>
+    </div>
+  </div>
+</div>

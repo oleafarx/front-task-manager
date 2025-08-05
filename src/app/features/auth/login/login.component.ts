@@ -67,9 +67,15 @@ export class LoginComponent {
   private getUserByEmail(email: string): void {
     this.userService.getUserByEmail(email).subscribe({
       next: (resp) => {
-        const userData = resp.data;
-        console.log("getUser res: ", userData);
-        this.sessionState.setSession(userData);
+        const data = resp.data;
+        const session: SessionData = {
+          user: data.user,
+          token: data.tokens.accessToken,
+          refreshToken: data.tokens.refreshToken,
+          isAuthenticated: true
+        }
+        console.log("getUser res: ", session);
+        this.sessionState.setSession(session);
         this.handleSuccessfulLogin();
       },
       error: (error) => {

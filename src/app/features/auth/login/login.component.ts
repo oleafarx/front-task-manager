@@ -3,9 +3,9 @@ import { FormBuilder, FormGroup, Validators, AbstractControl, ReactiveFormsModul
 import { CommonModule } from '@angular/common';
 import { UserService } from '../../../core/services/user.service'
 import { Router } from '@angular/router';
-import { User } from '../../../models/user.model';
 import { Subscription } from 'rxjs';
 import { SessionState } from '../../../core/states/sessionState';
+import { SessionData } from '../../../models/session.model';
 
 @Component({
   selector: 'app-login',
@@ -16,7 +16,6 @@ import { SessionState } from '../../../core/states/sessionState';
 })
 export class LoginComponent {
   public loginForm: FormGroup;
-  private session: any = {};
   public showModal: boolean = false;
   private emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   private sessionSubscription: Subscription = new Subscription();
@@ -35,15 +34,15 @@ export class LoginComponent {
   }
 
   ngOnInit(): void {
-    // this.sessionSubscription = this.sessionState.session$.subscribe(session => {
-    //   if (session.isAuthenticated) {
-    //     this.handleSuccessfulLogin();
-    //   }
-    // });
+    this.sessionSubscription = this.sessionState.session$.subscribe(session => {
+      if (session.isAuthenticated) {
+        this.handleSuccessfulLogin();
+      }
+    });
 
-    // if (this.sessionState.isAuthenticated) {
-    //    this.handleSuccessfulLogin();
-    // }
+    if (this.sessionState.isAuthenticated) {
+       this.handleSuccessfulLogin();
+    }
   }
 
   ngOnDestroy(): void {
@@ -83,7 +82,6 @@ export class LoginComponent {
   }
 
   private handleSuccessfulLogin(): void {
-    //this.sessionState.updateActivity();
     this.router.navigate(['/tasks']);
   }
 
@@ -91,9 +89,14 @@ export class LoginComponent {
     const email = this.loginForm.value.email;
     console.log('Redirect to register with email:', email);
     this.userService.createUser(email).subscribe({
-      next: (user: User) => {
-        console.log("postUser res: ", user);
-        this.sessionState.setSession(user);
+      next: (resp) => {
+        const sessionData: SessionData = {
+          user: resp.user,
+          token: resp.tokens.accessToken,
+          refreshToken: resp.tokens.refreshToken,
+          isAuthenticated: true
+        }
+        this.sessionState.setSession(sessionData);
         this.handleSuccessfulLogin();
       },
       error: (error) => {

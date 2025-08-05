@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "dist/task-manager",
+    "public": "dist/task-manager/browser",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -9,7 +9,7 @@
     "rewrites": [
       {
         "source": "**",
-        "destination": "/index.html"
+        "destination": "/index.csr.html"
       }
     ]
   }

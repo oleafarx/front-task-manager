@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Task } from '../../interfaces/task.interface';
 import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
-import { catchError, Observable, throwError } from 'rxjs';
+import { catchError, Observable, of, throwError } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class TaskService {
@@ -18,7 +18,7 @@ export class TaskService {
             catchError(error => {
                 if (error.status === 404) {
                     console.error('Tasks not found for user:', email);
-                    return throwError(() => new Error('Tasks not found'));
+                    return of({data: []});
                 }
                 return throwError(() => new Error('An error occurred while fetching tasks'));
             })

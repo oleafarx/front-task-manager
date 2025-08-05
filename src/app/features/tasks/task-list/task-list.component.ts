@@ -96,10 +96,9 @@ export class TaskListComponent {
       emailUser
     ).subscribe({
       next: (resp) => {
+        console.log("RESP: ", resp);
         const tasks = resp.data;
-        console.log("TASKS: ", tasks);
         this.tasksList = this.filterTasks(tasks);
-        console.log("TASK AFTER FILTER: ", this.tasksList)
         this.isLoading = false;
       },
       error: (error: any) => {
@@ -121,7 +120,6 @@ export class TaskListComponent {
     return taskFiltered;
   }
 
-  // Alternar vista entre completadas y pendientes
   toggleView(): void {
     this.showCompleted = !this.showCompleted;
     this.loadTasks();

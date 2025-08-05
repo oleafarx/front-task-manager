@@ -19,15 +19,15 @@ export class LoginComponent {
   public showModal: boolean = false;
   private emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   private sessionSubscription: Subscription = new Subscription();
-  
+
   constructor(private fb: FormBuilder,
-              private userService: UserService,
-              private sessionState: SessionState,
-              private router: Router) {
+    private userService: UserService,
+    private sessionState: SessionState,
+    private router: Router) {
 
     this.loginForm = this.fb.group({
       email: ['', [
-        Validators.required, 
+        Validators.required,
         Validators.pattern(this.emailPattern)
       ]]
     });
@@ -41,7 +41,7 @@ export class LoginComponent {
     });
 
     if (this.sessionState.isAuthenticated) {
-       this.handleSuccessfulLogin();
+      this.handleSuccessfulLogin();
     }
   }
 
@@ -67,15 +67,7 @@ export class LoginComponent {
   private getUserByEmail(email: string): void {
     this.userService.getUserByEmail(email).subscribe({
       next: (resp) => {
-        const data = resp.data;
-        const session: SessionData = {
-          user: data.user,
-          token: data.tokens.accessToken,
-          refreshToken: data.tokens.refreshToken,
-          isAuthenticated: true
-        }
-        console.log("getUser res: ", session);
-        this.sessionState.setSession(session);
+        this.saveSession(resp);
         this.handleSuccessfulLogin();
       },
       error: (error) => {
@@ -96,13 +88,7 @@ export class LoginComponent {
     console.log('Redirect to register with email:', email);
     this.userService.createUser(email).subscribe({
       next: (resp) => {
-        const sessionData: SessionData = {
-          user: resp.user,
-          token: resp.tokens.accessToken,
-          refreshToken: resp.tokens.refreshToken,
-          isAuthenticated: true
-        }
-        this.sessionState.setSession(sessionData);
+        this.saveSession(resp);
         this.handleSuccessfulLogin();
       },
       error: (error) => {
@@ -110,6 +96,18 @@ export class LoginComponent {
       }
     })
     this.closeModal();
+  }
+
+  private saveSession(resp: any): void {
+    const data = resp.data;
+    const session: SessionData = {
+      user: data.user,
+      token: data.tokens.accessToken,
+      refreshToken: data.tokens.refreshToken,
+      isAuthenticated: true
+    }
+    console.log("getUser res: ", session);
+    this.sessionState.setSession(session);
   }
 
   onRegisterCancel(): void {

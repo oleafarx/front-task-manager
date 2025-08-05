@@ -163,7 +163,7 @@
             placeholder="Ingresa el título de la tarea"
             maxlength="100"
           />
-          <div class="error-message" *ngIf="title?.invalid && title?.touched">
+          <div class="error-message-modal" *ngIf="title?.invalid && title?.touched">
             <span *ngIf="title?.errors?.['required']"
               >El título es requerido</span
             >
@@ -191,7 +191,7 @@
             {{ taskForm.get("description")?.value?.length || 0 }}/500
           </div>
           <div
-            class="error-message"
+            class="error-message-modal"
             *ngIf="description?.invalid && description?.touched"
           >
             <span *ngIf="description?.errors?.['maxlength']"
@@ -243,7 +243,7 @@
             placeholder="Ingresa el título de la tarea"
             maxlength="100"
           />
-          <div class="error-message" *ngIf="editTitle?.invalid && editTitle?.touched">
+          <div class="error-message-modal" *ngIf="editTitle?.invalid && editTitle?.touched">
             <span *ngIf="editTitle?.errors?.['required']"
               >El título es requerido</span
             >
@@ -271,7 +271,7 @@
             {{ editTaskForm.get("description")?.value?.length || 0 }}/500
           </div>
           <div
-            class="error-message"
+            class="error-message-modal"
             *ngIf="editDescription?.invalid && editDescription?.touched"
           >
             <span *ngIf="editDescription?.errors?.['maxlength']"

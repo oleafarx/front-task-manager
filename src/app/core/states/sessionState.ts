@@ -1,5 +1,5 @@
 import { BehaviorSubject } from 'rxjs';
-import { SessionData } from '../../models/session.model';
+import { SessionData } from '../../interfaces/session.interface';
 import { Injectable } from '@angular/core';
 
 @Injectable({ providedIn: 'root' })

@@ -5,7 +5,7 @@ import { UserService } from '../../../core/services/user.service'
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { SessionState } from '../../../core/states/sessionState';
-import { SessionData } from '../../../models/session.model';
+import { SessionData } from '../../../interfaces/session.interface';
 
 @Component({
   selector: 'app-login',

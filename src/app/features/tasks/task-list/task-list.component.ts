@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
-import { Task } from '../../../models/task.model';
+import { Task } from '../../../interfaces/task.interface';
 import { TaskService } from '../../../core/services/task.service';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { SessionData } from '../../../models/session.model';
+import { SessionData } from '../../../interfaces/session.interface';
 import { SessionState } from '../../../core/states/sessionState';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 

@@ -15,7 +15,6 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
   styleUrl: './task-list.component.scss'
 })
 export class TaskListComponent {
-  // Propiedades del componente
   tasksList: Task[] = [];
   showCompleted: boolean = false;
   isLoading: boolean = false;
@@ -49,7 +48,6 @@ export class TaskListComponent {
       ]]
     });
 
-    // Formulario para editar tareas
     this.editTaskForm = this.fb.group({
       title: ['', [
         Validators.required,
@@ -60,29 +58,25 @@ export class TaskListComponent {
         Validators.maxLength(500)
       ]]
     });
-    console.log("SESION ", this.session);
   }
 
   ngOnInit(): void {
     this.initializeComponent();
   }
 
-  // Inicialización del componente
   private initializeComponent(): void {
-    // Verificar si el usuario está autenticado
-    // if (!this.sessionState.isAuthenticated) {
-    //   console.log('Usuario no autenticado, redirigiendo al login');
-    //   // this.router.navigate(['/login']);
-    //   return;
-    // }
+    if (!this.sessionState.isAuthenticated) {
+      console.log('Usuario no autenticado, redirigiendo al login');
+      this.router.navigate(['/login']);
+      return;
+    }
 
-    // // Suscribirse a cambios en la sesión
-    // const sessionSub = this.sessionState.session$.subscribe(session => {
-    //   if (!session.isAuthenticated) {
-    //     console.log('Sesión terminada, redirigiendo al login');
-    //     // this.router.navigate(['/login']);
-    //   }
-    // });
+    const sessionSub = this.sessionState.session$.subscribe(session => {
+      if (!session.isAuthenticated) {
+        console.log('Sesión terminada, redirigiendo al login');
+        this.router.navigate(['/login']);
+      }
+    });
     this.loadTasks();
   }
 
@@ -91,12 +85,10 @@ export class TaskListComponent {
     this.errorMessage = '';
 
     const emailUser = this.session.user ? this.session.user.email : '';
-    console.log('USER: ', emailUser);
     this.taskService.getUserTasks(
       emailUser
     ).subscribe({
       next: (resp) => {
-        console.log("RESP: ", resp);
         const tasks = resp.data;
         this.tasksList = this.filterTasks(tasks);
         this.isLoading = false;
@@ -111,9 +103,7 @@ export class TaskListComponent {
   }
 
   private filterTasks(tasks: Task[]): Task[] {
-    console.log("TASKS: ", tasks);
     const taskFiltered = tasks.filter(task => {
-      console.log("TASK", task);
       if (!task.isActive) return false;
       return this.showCompleted ? task.isCompleted : !task.isCompleted;
     })
@@ -142,13 +132,11 @@ export class TaskListComponent {
       next: (result: Task) => {
         console.log('Tarea actualizada exitosamente:', result);
 
-        // Actualizar la tarea en el array local
         const taskIndex = this.tasksList.findIndex(t => t.id === task.id);
         if (taskIndex !== -1) {
           this.tasksList[taskIndex] = { ...this.tasksList[taskIndex], ...updatedTask } as Task;
         }
 
-        // Si estamos viendo pendientes, remover la tarea completada de la vista
         if (!this.showCompleted) {
           this.tasksList = this.tasksList.filter(t => t.id !== task.id);
         }
@@ -164,7 +152,6 @@ export class TaskListComponent {
     });
   }
 
-  // Crear tarea
   onCreateTask(): void {
     if (this.taskForm.invalid || this.isCreatingTask) {
       this.taskForm.markAllAsTouched();
@@ -173,7 +160,6 @@ export class TaskListComponent {
 
     this.isCreatingTask = true;
 
-    // Crear objeto de nueva tarea
     const userId = this.session.user ? this.session.user.email : 'default';
     const newTask: Omit<Task, 'id' | 'createdAt' | 'updatedAt'> = {
       userId: userId,
@@ -185,7 +171,6 @@ export class TaskListComponent {
 
     console.log('Creando nueva tarea:', newTask);
 
-    // Llamada al servicio para crear la tarea
     this.taskService.createTask(newTask).subscribe({
       next: () => {
         this.isCreatingTask = false;
@@ -210,16 +195,13 @@ export class TaskListComponent {
 
     console.log('Sesión cerrada exitosamente');
 
-    // Redirigir al login
     this.router.navigate(['/login']);
   }
 
-  // Verificar si hay tareas
   get hasTasks(): boolean {
     return this.tasksList.length > 0;
   }
 
-  // Manejar reintentos de carga
   retryLoadTasks(): void {
     this.isError = false;
     this.errorMessage = '';
@@ -231,24 +213,21 @@ export class TaskListComponent {
     this.resetTaskForm();
   }
 
-  // Cerrar modal de creación
   closeCreateModal(): void {
     if (this.isCreatingTask) {
-      return; // No permitir cerrar mientras se está creando
+      return;
     }
 
     this.showCreateModal = false;
     this.resetTaskForm();
   }
 
-   // Nuevos métodos para editar tareas
   openEditTaskModal(task: Task): void {
     if (task.isCompleted) return;
     
     this.currentEditingTask = task;
     this.showEditModal = true;
     
-    // Precargar los datos del formulario
     this.editTaskForm.patchValue({
       title: task.title,
       description: task.description
@@ -257,7 +236,7 @@ export class TaskListComponent {
 
   closeEditModal(): void {
     if (this.isEditingTask) {
-      return; // No permitir cerrar mientras se está editando
+      return;
     }
 
     this.showEditModal = false;
@@ -325,7 +304,6 @@ export class TaskListComponent {
     return this.editTaskForm.get('description');
   }
 
-  // Resetear formulario
   private resetTaskForm(): void {
     this.taskForm.reset();
     this.taskForm.markAsUntouched();

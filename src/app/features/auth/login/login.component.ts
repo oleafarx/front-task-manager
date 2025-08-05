@@ -106,7 +106,6 @@ export class LoginComponent {
       refreshToken: data.tokens.refreshToken,
       isAuthenticated: true
     }
-    console.log("getUser res: ", session);
     this.sessionState.setSession(session);
   }
 

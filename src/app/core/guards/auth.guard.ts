@@ -58,7 +58,6 @@ export class AuthGuard implements CanActivate {
         return true;
     }
 
-    // NUEVO: Método helper para limpiar sesión y redirigir
     private clearSessionAndRedirect(): void {
         this.sessionState.clearSession();
         this.router.navigate(['/login']);

@@ -25,7 +25,6 @@ export class SessionState {
     }
 
     get isAuthenticated(): boolean {
-        console.log("CURRENT: ", this.currentSession);
       return this.currentSession.isAuthenticated && !!this.currentSession.token;
     }
 
